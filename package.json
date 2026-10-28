@@ -1,0 +1,24 @@
+{
+  "name": "humanline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Human Resource Management System (MERN) with cookie-based JWT auth",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c green,cyan \"npm run dev -w server\" \"npm run dev -w client\"",
+    "seed": "npm run seed -w server",
+    "server": "npm run dev -w server",
+    "client": "npm run dev -w client",
+    "build": "npm run build -w client",
+    "start": "npm run start -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "overrides": {
+    "shell-quote": "^1.12.0"
+  }
+}
