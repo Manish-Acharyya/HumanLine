@@ -1,5 +1,5 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
 import { COMPANY_ADDRESS, COMPANY_NAME } from './constants.js';
 import { employeeName, formatDate, formatMoney } from './formatters.js';
 

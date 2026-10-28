@@ -5,6 +5,7 @@ import ApiError from '../utils/ApiError.js';
 import { generateToken } from '../utils/generateToken.js';
 import { sanitizeUser, sanitizeEmployee } from '../utils/sanitize.js';
 import { authCookieOptions, clearCookieOptions } from '../utils/cookieOptions.js';
+import { isEmailConfigured, sendPasswordResetEmail } from '../utils/mailer.js';
 
 const COOKIE_NAME = process.env.COOKIE_NAME || 'hrms_token';
 const IS_PROD = process.env.NODE_ENV === 'production';
@@ -44,24 +45,17 @@ export async function register(req, res, next) {
     const { name, email, password } = req.body;
     const normalizedEmail = String(email).toLowerCase().trim();
 
+    const allowOpenRegistration =
+      process.env.ALLOW_OPEN_REGISTRATION === 'true' ||
+      (process.env.ALLOW_OPEN_REGISTRATION !== 'false' && !IS_PROD);
+
+    if (!allowOpenRegistration) {
+      throw new ApiError(403, 'Registration is invite-only. Contact your administrator to set up your account.');
+    }
+
     const existing = await User.findOne({ email: normalizedEmail });
-
     if (existing) {
-      const isClaimable =
-        existing.status === 'pending' && existing.role === 'employee';
-      if (!isClaimable) {
-        throw new ApiError(409, 'An account with this email already exists. Please log in instead.');
-      }
-
-      existing.password = password;
-      existing.status = 'active';
-      await existing.save();
-
-      return res.json({
-        success: true,
-        message: 'Account registered successfully. You can now log in.',
-        data: sanitizeUser(existing),
-      });
+      throw new ApiError(409, 'An account with this email already exists. Please log in instead.');
     }
 
     const user = await User.create({
@@ -139,15 +133,31 @@ export async function forgotPassword(req, res, next) {
     );
 
     const payload = {
-      message: 'If an account exists for that email, a reset token has been generated.',
+      message: 'If an account exists for that email, a reset link has been sent.',
     };
 
     if (user) {
       const rawToken = await user.createPasswordResetToken();
-      if (!IS_PROD) {
+      const resetUrl = `${CLIENT_URL}/reset-password?token=${rawToken}`;
+
+      if (isEmailConfigured()) {
+        try {
+          await sendPasswordResetEmail({
+            to: user.email,
+            name: user.name,
+            resetUrl,
+            expiresInMinutes: 15,
+          });
+        } catch (err) {
+          console.error('Failed to send password reset email:', err.message);
+          throw new ApiError(503, 'Could not send the reset email. Please try again later.');
+        }
+      } else if (IS_PROD) {
+        throw new ApiError(503, 'Password reset is not available. Contact your administrator.');
+      } else {
         payload.data = {
           resetToken: rawToken,
-          resetUrl: `${CLIENT_URL}/reset-password?token=${rawToken}`,
+          resetUrl,
           expiresInMinutes: 15,
         };
       }

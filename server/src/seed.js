@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import { connectDB, disconnectDB } from './config/db.js';
 import User from './models/User.js';
 import Employee from './models/Employee.js';
@@ -227,6 +226,14 @@ async function seedPayroll(employees, admin) {
 }
 
 async function seed() {
+  if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force')) {
+    console.error(
+      'Refusing to seed demo data while NODE_ENV=production (demo credentials are public).\n' +
+        'Run "npm run seed -w server -- --force" if you really mean it.'
+    );
+    process.exit(1);
+  }
+
   console.log('Seeding HRMS database...');
 
   const admin = await upsertUser(ADMIN);
@@ -249,9 +256,9 @@ async function seed() {
     const user = await upsertUser({
       name,
       email,
-      password: crypto.randomBytes(24).toString('hex'),
+      password: 'Employee@123',
       role: 'employee',
-      status: 'pending',
+      status: 'active',
     });
     const employee = await upsertEmployee(user._id, profile);
     employees.push(employee);
@@ -273,8 +280,7 @@ async function seed() {
 
   console.log('\n--- Seed credentials ---');
   console.log('Admin → admin@hrms.dev / Admin@123');
-  console.log('Employee accounts are created as "pending".');
-  console.log('Each employee must self-register at /register with their work email to set a password.');
+  console.log('Employees → john@hrms.dev / Employee@123 (same password for all demo staff)');
   console.log('-------------------------\n');
 }
 

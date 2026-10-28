@@ -4,7 +4,7 @@ node_modules/
 # Environment variables and secrets
 .env
 .env.local
-
+!.env.example
 
 # Build files
 dist/
@@ -20,3 +20,4 @@ coverage/
 .vscode/
 .idea/
 .DS_Store
+
