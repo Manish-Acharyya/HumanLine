@@ -17,19 +17,13 @@ function assertEnvSafety() {
       );
     }
     if (!process.env.CLIENT_URL) errors.push('CLIENT_URL is required in production (public frontend URL)');
-    if (!process.env.SMTP_HOST) {
-      warnings.push('SMTP_HOST not set — password-reset emails are disabled (POST /api/auth/forgot-password will return 503)');
-    }
   } else {
     if (IS_PROD_LIKE) {
       warnings.push(
         'NODE_ENV is not "production" on a public host — hardening is engaged via the RENDER platform marker, but set NODE_ENV=production for the full production contract'
       );
       if (!process.env.CLIENT_URL) {
-        warnings.push('CLIENT_URL not set — password-reset links fall back to http://localhost:5173');
-      }
-      if (!process.env.SMTP_HOST) {
-        warnings.push('SMTP_HOST not set — password-reset emails are disabled (POST /api/auth/forgot-password will return 503)');
+        warnings.push('CLIENT_URL not set — CORS allow-list falls back to defaults');
       }
     }
   }

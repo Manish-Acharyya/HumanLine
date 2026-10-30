@@ -70,14 +70,6 @@ export default function Login() {
             autoComplete="current-password"
             required
           />
-          <div className="mt-1 text-right">
-            <Link
-              to="/forgot-password"
-              className="text-xs font-medium text-blue-600 hover:text-blue-700"
-            >
-              Forgot password?
-            </Link>
-          </div>
         </div>
 
         <Button type="submit" loading={loading} className="w-full">

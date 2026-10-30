@@ -5,7 +5,7 @@ HumanLine is a secure, role-based Human Resource Management System (HRMS) built 
 ## 🚀 Features
 
 ## 👤 User Authentication & Security
-JWT-based authentication stored in secure httpOnly cookies (hrms_token) • Role-Based Access Control (RBAC) with separate Admin and Employee dashboards • Forgot & Reset Password workflow via secure crypto tokens • Password visibility toggles
+JWT-based authentication stored in secure httpOnly cookies (hrms_token) • Role-Based Access Control (RBAC) with separate Admin and Employee dashboards • Change-password flow from the profile page • Password visibility toggles
 
 ## 🏢 Employee Management
 Full CRUD operations to create, view, update, terminate, and delete staff profiles • Automatic generation of demo organizational data • Centralized workforce directory for administrators
@@ -19,7 +19,7 @@ Automated salary calculation based on base pay • Smart unpaid-leave deductions
 ## 🛠️ Tech Stack
 Frontend React 18 • Vite • Tailwind CSS v4 • React Router DOM • Axios • Lucide React • jsPDF
 Backend Node.js • Express.js (ESM) • express-validator • cookie-parser • cors
-Database MongoDB • httpOnly Cookies • bcryptjs • Crypto tokens
+Database MongoDB • httpOnly Cookies • bcryptjs
 Tools & Project Structure npm Workspaces • Concurrently • Git • Postman
 
 ## 🏁 Quick start
@@ -54,12 +54,7 @@ Open **http://localhost:5173**
 2. **Employee management** — create, view, update, terminate, delete staff
 3. **Attendance & leave** — clock in/out, leave request/approval workflow
 4. **Payroll** — salary calculation with unpaid-leave deduction, PDF payslips
-5. **Password flows** — forgot/reset token flow + show/hide password toggles
-
-> ⚠️ Password reset links are **emailed** when SMTP is configured. Without SMTP
-> on a development machine the reset token is returned in the API response; on a
-> **public host** forgot-password returns **503** instead (reset tokens are never
-> exposed publicly). See `plan.md §4`.
+5. **Password flows** — change password from the profile page + show/hide password toggles
 
 ## Production deployment
 
@@ -71,8 +66,7 @@ Open **http://localhost:5173**
    | `NODE_ENV=production` | ✅ | Full production contract (fail-fast validation, invite-only registration) |
    | `JWT_SECRET` | ✅ | ≥ 32 chars, high entropy: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
    | `MONGODB_URI` | ✅ | Your MongoDB Atlas connection string |
-   | `CLIENT_URL` | ✅ | Public frontend URL, e.g. `https://your-app.onrender.com` (password-reset links) |
-   | `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASS`/`SMTP_FROM` | recommended | Password-reset emails; without them forgot-password returns 503 |
+   | `CLIENT_URL` | ✅ | Public frontend URL, e.g. `https://your-app.onrender.com` (CORS allow-list) |
    | `TRUST_PROXY` | auto on Render | Set `1` manually behind nginx/ALB so rate limiting sees real client IPs |
    | `ALLOW_OPEN_REGISTRATION` | optional | `true` to allow public sign-up (default: invite-only on public hosts) |
    | `AUTH_RATE_LIMIT_MAX` | optional | Failed auth attempts per IP per 15 min (default `20`) |
@@ -83,10 +77,10 @@ Open **http://localhost:5173**
    **Platform detection:** running on Render (the `RENDER` platform marker) always
    engages production hardening even if `NODE_ENV` was left at `development`:
    `Secure` httpOnly cookies, HSTS, invite-only registration, no stack traces,
-   no token-in-response password resets, per-client-IP rate limiting, and a random
-   per-boot `JWT_SECRET` fallback if none is configured (sessions then reset on
-   restart — set `JWT_SECRET` to keep sessions stable). Startup logs list every
-   config warning; `GET /api/health` reports `env` and `productionLike`.
+   per-client-IP rate limiting, and a random per-boot `JWT_SECRET` fallback if
+   none is configured (sessions then reset on restart — set `JWT_SECRET` to keep
+   sessions stable). Startup logs list every config warning; `GET /api/health`
+   reports `env` and `productionLike`.
 
 2. **Build and run:**
 

@@ -41,26 +41,6 @@ router.post(
   authController.register
 );
 
-router.post(
-  '/forgot-password',
-  authLimiter,
-  [body('email').trim().isEmail().withMessage('A valid email is required')],
-  validate,
-  authController.forgotPassword
-);
-
-router.post(
-  '/reset-password',
-  authLimiter,
-  [
-    body('token').notEmpty().withMessage('Reset token is required'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('confirmPassword').notEmpty().withMessage('Password confirmation is required'),
-  ],
-  validate,
-  authController.resetPassword
-);
-
 router.post('/logout', authController.logout);
 
 router.get('/me', protect, authController.me);

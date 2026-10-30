@@ -1,14 +1,10 @@
-import crypto from 'crypto';
 import User from '../models/User.js';
 import Employee from '../models/Employee.js';
 import ApiError from '../utils/ApiError.js';
 import { generateToken } from '../utils/generateToken.js';
 import { sanitizeUser, sanitizeEmployee } from '../utils/sanitize.js';
 import { authCookieOptions, clearCookieOptions } from '../utils/cookieOptions.js';
-import { isEmailConfigured, sendPasswordResetEmail } from '../utils/mailer.js';
 import { COOKIE_NAME, IS_PROD_LIKE } from '../config/env.js';
-
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 //login
 export async function login(req, res, next) {
@@ -119,85 +115,6 @@ export async function updateProfile(req, res, next) {
       success: true,
       message: 'Profile updated successfully',
       data: { user: sanitizeUser(user), employee: employee ? sanitizeEmployee(employee) : null },
-    });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function forgotPassword(req, res, next) {
-  try {
-    const { email } = req.body;
-
-    const user = await User.findOne({ email }).select(
-      '+passwordResetToken +passwordResetExpires'
-    );
-
-    const payload = {
-      message: 'If an account exists for that email, a reset link has been sent.',
-    };
-
-    if (user) {
-      const rawToken = await user.createPasswordResetToken();
-      const resetUrl = `${CLIENT_URL}/reset-password?token=${rawToken}`;
-
-      if (isEmailConfigured()) {
-        try {
-          await sendPasswordResetEmail({
-            to: user.email,
-            name: user.name,
-            resetUrl,
-            expiresInMinutes: 15,
-          });
-        } catch (err) {
-          console.error('Failed to send password reset email:', err.message);
-          throw new ApiError(503, 'Could not send the reset email. Please try again later.');
-        }
-      } else if (IS_PROD_LIKE) {
-        throw new ApiError(503, 'Password reset is not available. Contact your administrator.');
-      } else {
-        payload.data = {
-          resetToken: rawToken,
-          resetUrl,
-          expiresInMinutes: 15,
-        };
-      }
-    }
-
-    res.json({ success: true, ...payload });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function resetPassword(req, res, next) {
-  try {
-    const { token, password, confirmPassword } = req.body;
-
-    if (!token) throw new ApiError(400, 'Reset token is required');
-    if (!password || password.length < 6) {
-      throw new ApiError(400, 'Password must be at least 6 characters');
-    }
-    if (password !== confirmPassword) throw new ApiError(400, 'Passwords do not match');
-
-    const hashed = crypto.createHash('sha256').update(token).digest('hex');
-    const user = await User.findOne({
-      passwordResetToken: hashed,
-      passwordResetExpires: { $gt: new Date() },
-    }).select('+passwordResetToken +passwordResetExpires');
-
-    if (!user) throw new ApiError(400, 'Reset token is invalid or has expired');
-
-    user.password = password;
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save();
-
-    res.clearCookie(COOKIE_NAME, clearCookieOptions());
-
-    res.json({
-      success: true,
-      message: 'Password reset successful. You can now log in with your new password.',
     });
   } catch (err) {
     next(err);

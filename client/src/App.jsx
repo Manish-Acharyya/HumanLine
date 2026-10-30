@@ -7,8 +7,6 @@ import Spinner from './components/ui/Spinner.jsx';
 
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
-import ForgotPassword from './pages/ForgotPassword.jsx';
-import ResetPassword from './pages/ResetPassword.jsx';
 import Registration from './pages/Registration.jsx';
 import NotFound from './pages/NotFound.jsx';
 
@@ -58,8 +56,6 @@ export default function App() {
           <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
           <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
-          <Route path="/forgot-password" element={<PublicOnly><ForgotPassword /></PublicOnly>} />
-          <Route path="/reset-password" element={<PublicOnly><ResetPassword /></PublicOnly>} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>

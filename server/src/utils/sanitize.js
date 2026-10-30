@@ -1,8 +1,6 @@
 export function sanitizeUser(user) {
   const obj = typeof user.toObject === 'function' ? user.toObject() : { ...user };
   delete obj.password;
-  delete obj.passwordResetToken;
-  delete obj.passwordResetExpires;
   return obj;
 }
 
