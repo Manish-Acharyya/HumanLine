@@ -9,14 +9,21 @@ import mongoSanitize from 'express-mongo-sanitize';
 import morgan from 'morgan';
 import routes from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
-
-const NODE_ENV = process.env.NODE_ENV || 'development';
-const IS_PROD = NODE_ENV === 'production';
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+import { IS_PROD_LIKE, NODE_ENV } from './config/env.js';
 
 const app = express();
 
-app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : Number(process.env.TRUST_PROXY) || 0);
+// Trust the platform proxy so rate limiting and logs see real client IPs.
+// Render (and nginx/ALB) set X-Forwarded-For; without this, every user shares
+// one IP for rate-limiting and hits 429 after a handful of login attempts.
+const trustProxyEnv = process.env.TRUST_PROXY;
+let trustProxy = 0;
+if (trustProxyEnv !== undefined && trustProxyEnv !== '') {
+  trustProxy = trustProxyEnv === 'true' ? 1 : trustProxyEnv === 'false' ? 0 : Number(trustProxyEnv) || 0;
+} else if (process.env.RENDER) {
+  trustProxy = 1;
+}
+app.set('trust proxy', trustProxy);
 app.disable('x-powered-by');
 
 app.use(
@@ -36,19 +43,32 @@ app.use(
       },
     },
     crossOriginEmbedderPolicy: false,
-    hsts: IS_PROD ? { maxAge: 31536000, includeSubDomains: true } : false,
+    hsts: IS_PROD_LIKE ? { maxAge: 31536000, includeSubDomains: true } : false,
   })
 );
 
-const corsOrigins = CLIENT_URL.split(',').map((o) => o.trim()).filter(Boolean);
-app.use(
+const corsOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+// Same-origin requests are always allowed (the API also serves the built SPA),
+// so login can never 500 because CLIENT_URL is stale or missing. Cross-origin
+// requests get a clean CORS rejection (callback(null, false)), never a 500.
+app.use((req, res, next) =>
   cors({
     origin(origin, callback) {
-      if (!origin || corsOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+      if (!origin) return callback(null, true);
+      if (corsOrigins.includes(origin)) return callback(null, true);
+      try {
+        if (new URL(origin).host === req.headers.host) return callback(null, true);
+      } catch {
+        // malformed Origin header — fall through to rejection
+      }
+      return callback(null, false);
     },
     credentials: true,
-  })
+  })(req, res, next)
 );
 
 app.use(express.json({ limit: '1mb' }));
@@ -57,10 +77,13 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 
 morgan.token('id', (req) => req.id || '-');
-app.use(morgan(IS_PROD ? ':remote-addr :method :url :status :response-time ms - req/:id' : 'dev'));
+app.use(morgan(IS_PROD_LIKE ? ':remote-addr :method :url :status :response-time ms - req/:id' : 'dev'));
 
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, data: { status: 'ok', env: NODE_ENV, time: new Date().toISOString() } });
+  res.json({
+    success: true,
+    data: { status: 'ok', env: NODE_ENV, productionLike: IS_PROD_LIKE, time: new Date().toISOString() },
+  });
 });
 
 app.use('/api', routes);

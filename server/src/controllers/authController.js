@@ -6,11 +6,11 @@ import { generateToken } from '../utils/generateToken.js';
 import { sanitizeUser, sanitizeEmployee } from '../utils/sanitize.js';
 import { authCookieOptions, clearCookieOptions } from '../utils/cookieOptions.js';
 import { isEmailConfigured, sendPasswordResetEmail } from '../utils/mailer.js';
+import { COOKIE_NAME, IS_PROD_LIKE } from '../config/env.js';
 
-const COOKIE_NAME = process.env.COOKIE_NAME || 'hrms_token';
-const IS_PROD = process.env.NODE_ENV === 'production';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
+//login
 export async function login(req, res, next) {
   try {
     const { email, password } = req.body;
@@ -40,6 +40,7 @@ export async function login(req, res, next) {
   }
 }
 
+//register
 export async function register(req, res, next) {
   try {
     const { name, email, password } = req.body;
@@ -47,7 +48,7 @@ export async function register(req, res, next) {
 
     const allowOpenRegistration =
       process.env.ALLOW_OPEN_REGISTRATION === 'true' ||
-      (process.env.ALLOW_OPEN_REGISTRATION !== 'false' && !IS_PROD);
+      (process.env.ALLOW_OPEN_REGISTRATION !== 'false' && !IS_PROD_LIKE);
 
     if (!allowOpenRegistration) {
       throw new ApiError(403, 'Registration is invite-only. Contact your administrator to set up your account.');
@@ -152,7 +153,7 @@ export async function forgotPassword(req, res, next) {
           console.error('Failed to send password reset email:', err.message);
           throw new ApiError(503, 'Could not send the reset email. Please try again later.');
         }
-      } else if (IS_PROD) {
+      } else if (IS_PROD_LIKE) {
         throw new ApiError(503, 'Password reset is not available. Contact your administrator.');
       } else {
         payload.data = {

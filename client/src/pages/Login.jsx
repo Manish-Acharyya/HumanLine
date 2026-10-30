@@ -29,17 +29,10 @@ export default function Login() {
     setError(null);
     try {
       const response = await authService.login(form);
-     const user = response.data.data;
-
-if (!user) {
-  throw new Error("User data missing from login response");
-}
-
-setUser(user);
-
-navigate(user.role === "admin" ? "/admin" : "/dashboard", {
-  replace: true,
-});
+      const user = response?.data;
+      if (!user?.role) throw new Error('User data missing from login response');
+      setUser(user);
+      navigate(user.role === 'admin' ? '/admin' : '/dashboard', { replace: true });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

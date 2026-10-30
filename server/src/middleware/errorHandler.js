@@ -1,4 +1,5 @@
 import ApiError from '../utils/ApiError.js';
+import { IS_PROD_LIKE } from '../config/env.js';
 
 export function notFound(req, res, next) {
   next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
@@ -34,8 +35,6 @@ export function errorHandler(err, req, res, next) {
   res.status(statusCode).json({
     success: false,
     message,
-    ...(process.env.NODE_ENV !== 'production' && statusCode === 500
-      ? { stack: err.stack }
-      : {}),
+    ...(!IS_PROD_LIKE && statusCode === 500 ? { stack: err.stack } : {}),
   });
 }

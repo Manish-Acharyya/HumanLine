@@ -1,4 +1,5 @@
 import { connectDB, disconnectDB } from './config/db.js';
+import { IS_PROD_LIKE } from './config/env.js';
 import User from './models/User.js';
 import Employee from './models/Employee.js';
 import Attendance from './models/Attendance.js';
@@ -226,9 +227,9 @@ async function seedPayroll(employees, admin) {
 }
 
 async function seed() {
-  if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force')) {
+  if (IS_PROD_LIKE && !process.argv.includes('--force')) {
     console.error(
-      'Refusing to seed demo data while NODE_ENV=production (demo credentials are public).\n' +
+      'Refusing to seed demo data on a production-like host (demo credentials are public).\n' +
         'Run "npm run seed -w server -- --force" if you really mean it.'
     );
     process.exit(1);

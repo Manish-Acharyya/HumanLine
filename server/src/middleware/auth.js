@@ -1,9 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import ApiError from '../utils/ApiError.js';
-
-const COOKIE_NAME = process.env.COOKIE_NAME || 'hrms_token';
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_hrms_secret_change_me_in_production';
+import { COOKIE_NAME, JWT_SECRET } from '../config/env.js';
 
 function extractToken(req) {
   const cookieToken = req.cookies?.[COOKIE_NAME];

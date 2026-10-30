@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://humanline-2.onrender.com',
+        target: 'http://localhost:5000',
         changeOrigin: true,
       },
     },

@@ -12,6 +12,9 @@ const authLimiter = rateLimit({
   max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 20,
   standardHeaders: true,
   legacyHeaders: false,
+  // Only failed attempts consume the budget, so legitimate users can never be
+  // locked out by successful logins while brute force is still throttled.
+  skipSuccessfulRequests: true,
   message: { success: false, message: 'Too many attempts. Please try again in a few minutes.' },
 });
 
